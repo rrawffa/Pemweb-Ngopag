@@ -1,0 +1,73 @@
+<?php
+
+use LDAP\Result;
+    class Auth extends Controller{
+
+            public function __construct(){
+                session_start();
+                if (isset($_SESSION['username']))
+                    header('Location: ?c=Dashboard&m=index');
+            }
+            public function login(){
+                $this->loadView("Login", ["error" => ""]);
+            }
+
+            public function loginProcess(){
+                $emailorusername = trim($_POST['username_or_email']);
+                $password = trim($_POST['password']);
+
+                $model = $this->loadModel("User");
+                $existing = $model->findByEmailorUsername($emailorusername , $emailorusername);
+
+                if ($existing && password_verify($password, $existing->password)) {
+                    $_SESSION['username'] = $existing->username;
+                    header("Location: ?c=Dashboard&m=index");
+                } else {
+                    $this->loadView("Login", ["error" => "Email/Username or Password Wrong"]);
+                }
+            }
+
+            public function register(){
+                $this->loadView("Register", ["error" => ""]);
+            }
+
+            public function registerProcess(){
+                if (empty($_POST['username']) || empty($_POST['email']) || 
+                    empty($_POST['password']) || empty($_POST['confirm_password'])) {
+                    $this->loadView("Register", ["error" => "Semua field harus diisi"]);
+                    return;
+                }
+
+                $username = trim($_POST['username']);
+                $email = trim($_POST['email']);
+                $password = trim($_POST['password']);
+                $confirm_password = trim($_POST['confirm_password']);
+
+                if ($password !== $confirm_password) {
+                    $this->loadView("Register", ["error" => "Password tidak cocok"]);
+                    return;
+                }
+
+                $model = $this->loadModel("User");
+                $existing = $model->findByEmailorUsername($username, $email);
+
+                if ($existing) {
+                    if ($existing->email === $email && $existing->username === $username)
+                         $this->loadView("Register", ["error" => "Email and Username already used"]);
+                    else if ($existing->email === $email)
+                        $this->loadView("Register", ["error" => "Email already used"]);
+                    else $this->loadView("Register", ["error" => "Username already used"]);
+                    return;
+                } else {
+                    $model->createUser($username, $password, $email);
+                    header("Location: ?c=Dashboard&m=index");
+                }
+            }
+
+            public function logoutProcess(){
+                session_destroy();
+                $this->loadView("Login", ["error" => ""]);
+            }
+    }
+    
+?>
