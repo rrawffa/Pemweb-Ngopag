@@ -1,0 +1,16 @@
+<?php
+    class Controller{
+        public function loadModel($modelName){
+            include_once "Models/Model.php";
+            include_once "Models/$modelName.php";
+
+            return new $modelName;
+        }
+        public function loadView($viewName, $data = []){
+            foreach ($data as $key => $value) {
+                $$key = $value;
+            }
+            include_once "Views/$viewName.php";
+        }
+    }
+?>
